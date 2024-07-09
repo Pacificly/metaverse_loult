@@ -681,7 +681,7 @@
             const model = gltf.scene;
             scene.add(model);
 
-            fetch('pokemon_data.json')
+            fetch('assets/pokemon_data.json')
               .then(response => response.json())
               .then(data => {
                 var position = new THREE.Vector3(Math.random() * 7 - 3.5, 0, Math.random() * 7 - 3.5);
