@@ -1,5 +1,5 @@
 <html><head>
-  <title>WebSim 3D Visualizer</title>
+  <title>Loult3D</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -337,8 +337,6 @@
     let pokemons = {};
     let me_userid = "";
     let currentModel;
-
-    document.cookie = "id=abc123; path=/; domain=loult.family;";
 
     let server = "loult.family";
     let port = 443;
@@ -774,7 +772,7 @@
 
     window.onload = () => {
       init();
-      //loadScene('assets/loult.glb');
+      loadScene('assets/loult.glb');
       animate();
     };
 
