@@ -1,0 +1,851 @@
+<html><head>
+  <title>WebSim 3D Visualizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+    #toggle_userlist {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #fullscreen {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .toggle-btn {
+      width: 120px; /* Example width */
+      height: 35px; /* Example height */
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #toggle-pov-btn {
+      position: absolute;
+      top: 10px;
+      right: 100px;
+    }
+    #toggle-names-btn {
+      position: absolute;
+      top: 10px;
+      right: 230px;
+    }
+    #toggle-orthographic-btn {
+      position: absolute;
+      top: 10px;
+      right: 360px;
+    }
+    #userList {
+      position: absolute;
+      top: 60px;
+      left: 10px;
+      background-color: #333;
+      border-radius: 5px;
+      padding: 10px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #userList div {
+      margin-bottom: 5px;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 3px;
+    }
+    #userList div:hover {
+      background-color: #444;
+    }
+    #message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .blur-effect {
+      filter: blur(8px);
+      transition: filter 5s ease-out;
+    }
+    .no-blur-effect {
+      filter: blur(0);
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <input type="file" id="fileInput" style="display:none" accept=".gltf,.glb" multiple>
+  <button id="toggle_userlist" onclick="toggleUserList()">Userlist</button>
+  <button id="fullscreen">Fullscreen</button>
+  <button id="toggle-pov-btn" class="toggle-btn" aria-label="Toggle Point of View" onclick="togglePOV()">Toggle POV</button>
+  <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle Names" onclick="toggleNames()">Toggle Names</button>
+  <button id="toggle-orthographic-btn" class="toggle-btn" aria-label="Toggle Orthographic" onclick="toggleOrthographic()">Change View</button>
+
+  <div id="userList"></div>
+  <div id="message" style="display: none;"></div>
+  <div id="inputContainer" style="position: absolute; bottom: 10px; left: 0; right: 0; display: flex; align-items: center; padding: 10px 20px;">
+    <input type="text" id="textInput" placeholder="Message..." style="flex-grow: 1; padding: 10px; border: none; border-radius: 5px; background-color: rgba(0, 0, 0, 0.7); color: white; text-align: left; margin-right: 10px; width: 90%;" onkeydown="if (event.key === 'Enter') document.getElementById('sendButton').click();">
+    <button id="sendButton" style="flex-grow: 2; padding: 10px; border: none; border-radius: 5px; background-color: #28a745; color: white; cursor: pointer;" onclick="sendMessage()">Send</button>
+  </div>
+  <div style="position: fixed; right: 10px; top: 50%; transform: translateY(-50%);">
+    <input type="range" id="sentenceScrollbar" min="0" max="10" value="0" style="writing-mode: bt-lr; width: 8px; height: 100px;">
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/FirstPersonControls.js"></script>
+
+  <script>
+    LoultControls = function ( object, domElement ) {
+
+    this.object = object;
+    this.target = new THREE.Vector3();
+
+    this.domElement = ( domElement !== undefined ) ? domElement : document;
+
+    this.enabled = true;
+
+    this.velocity = 0;
+    this.damping = 0.4;
+    this.height = 0.5;
+
+    this.movementSpeed = 1.0;
+    this.lookSpeed = 0.005;
+
+    this.lookVertical = true;
+    this.autoForward = false;
+
+    this.activeLook = true;
+
+    this.heightSpeed = false;
+    this.heightCoef = 1.0;
+    this.heightMin = 0.0;
+    this.heightMax = 1.0;
+
+    this.constrainVertical = false;
+    this.verticalMin = 0;
+    this.verticalMax = Math.PI;
+
+    this.autoSpeedFactor = 0.0;
+
+    this.mouseX = 0;
+    this.mouseY = 0;
+
+    this.lat = 0;
+    this.lon = 0;
+    this.phi = 0;
+    this.theta = 0;
+
+    this.moveForward = false;
+    this.moveBackward = false;
+    this.moveLeft = false;
+    this.moveRight = false;
+
+    this.mouseDragOn = false;
+    this.upReleased = false;
+
+    // Dash effect properties
+    this.isDashing = false;
+    this.dashDuration = 300; // Dash duration in milliseconds
+
+    this.viewHalfX = 0;
+    this.viewHalfY = 0;
+
+    if ( this.domElement !== document ) {
+      this.domElement.setAttribute( 'tabindex', - 1 );
+    }
+
+    this.handleResize = function () {
+
+      if ( this.domElement === document ) {
+
+        this.viewHalfX = window.innerWidth / 2;
+        this.viewHalfY = window.innerHeight / 2;
+
+      } else {
+
+        this.viewHalfX = this.domElement.offsetWidth / 2;
+        this.viewHalfY = this.domElement.offsetHeight / 2;
+
+      }
+
+    };
+
+    this.onMouseDown = function ( event ) {
+      if (this.upReleased) {
+        this.isDashing = true;
+        setTimeout(() => {
+          this.isDashing = false;
+        }, this.dashDuration);
+      }
+
+      if ( this.activeLook ) {
+        switch ( event.button ) {
+          case 0: this.moveForward = true; break;
+          case 2: this.moveBackward = true; break;
+        }
+      }
+
+      this.mouseDragOn = true;
+
+      event.stopPropagation();
+    };
+
+    this.onMouseUp = function ( event ) {
+      if ( this.activeLook ) {
+        switch ( event.button ) {
+          case 0: this.moveForward = false; break;
+          case 2: this.moveBackward = false; break;
+        }
+      }
+
+      this.mouseDragOn = false;
+      this.upReleased = true;
+
+      setTimeout(() => {
+        this.upReleased = false;
+      }, 100);
+    };
+
+    this.onMouseMove = function ( event ) {
+      if ( this.domElement === document ) {
+        this.mouseX = event.pageX - this.viewHalfX;
+        this.mouseY = event.pageY - this.viewHalfY;
+      } else {
+        this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
+        this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
+      }
+    };
+
+    this.update = function( delta ) {
+      if ( this.enabled === false ) return;
+
+      var dashFactor = this.isDashing ? 8 : 1;
+      var actualMoveSpeed = delta * this.movementSpeed * dashFactor;
+
+      if ( this.moveForward) this.object.translateZ( - actualMoveSpeed);
+      if ( this.moveBackward) this.object.translateZ( actualMoveSpeed);
+
+      //add gravity
+      if (this.object.position.y <= this.height) {
+        this.velocity = 0;
+        this.object.position.y = this.height;
+      } else {
+        this.velocity -= 9.8 * 0.002 * delta;
+        this.object.position.y += this.velocity * delta;
+      }
+      
+
+      var actualLookSpeed = delta * this.lookSpeed;
+      if ( ! this.activeLook ) {
+        actualLookSpeed = 0;
+      }
+      var verticalLookRatio = 1;
+      if ( this.constrainVertical ) {
+        verticalLookRatio = Math.PI / ( this.verticalMax - this.verticalMin );
+      }
+
+      this.lon += this.mouseX * actualLookSpeed;
+      if ( this.lookVertical ) this.lat -= this.mouseY * actualLookSpeed * verticalLookRatio;
+
+      this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
+      this.phi = THREE.Math.degToRad( 90 - this.lat );
+
+      this.theta = THREE.Math.degToRad( this.lon );
+
+      if ( this.constrainVertical ) {
+        this.phi = THREE.Math.mapLinear( this.phi, 0, Math.PI, this.verticalMin, this.verticalMax );
+      }
+
+      var targetPosition = this.target,
+        position = this.object.position;
+
+      targetPosition.x = position.x + 100 * Math.sin( this.phi ) * Math.cos( this.theta );
+      targetPosition.y = position.y + 100 * Math.cos( this.phi );
+      targetPosition.z = position.z + 100 * Math.sin( this.phi ) * Math.sin( this.theta );
+
+      this.object.lookAt( targetPosition );
+    };
+
+    function contextmenu( event ) {
+      event.preventDefault();
+    }
+
+    this.dispose = function() {
+      this.domElement.removeEventListener( 'contextmenu', contextmenu, false );
+      this.domElement.removeEventListener( 'mousedown', _onMouseDown, false );
+      this.domElement.removeEventListener( 'mousemove', _onMouseMove, false );
+      this.domElement.removeEventListener( 'mouseup', _onMouseUp, false );
+    };
+
+    var _onMouseMove = bind( this, this.onMouseMove );
+    var _onMouseDown = bind( this, this.onMouseDown );
+    var _onMouseUp = bind( this, this.onMouseUp );
+
+    this.domElement.addEventListener( 'contextmenu', contextmenu, false );
+    this.domElement.addEventListener( 'mousemove', _onMouseMove, false );
+    this.domElement.addEventListener( 'mousedown', _onMouseDown, false );
+    this.domElement.addEventListener( 'mouseup', _onMouseUp, false );
+
+    function bind( scope, fn ) {
+      return function () {
+        fn.apply( scope, arguments );
+      };
+    }
+    this.handleResize();
+    };
+  </script>
+
+  <script>
+    let scene, camera, renderer, controls;
+    //format {name: string, object: THREE.Object3D}
+    let models = [];
+    //format {name: string, object: THREE.Object3D, color: string, nametag: THREE.Object3D, target: THREE.Vector3, timer: number, count: number, action: string, current_sentence: string, height: number}
+    let pokemons = {};
+    let me_userid = "";
+    let currentModel;
+
+    document.cookie = "id=abc123; path=/; domain=loult.family;";
+
+    let server = "loult.family";
+    let port = 443;
+    let channel = "meta";
+
+    // Construct the WebSocket URL dynamically
+    var url = `wss://${server}:${port}/socket/${channel}`;
+    var client = new WebSocket(url);
+
+    var loult_canvas,loult_context;
+    var texture_text;
+    var conversation = []
+    var text_y = 0;
+    var index_sentence = 0;
+    const line_height = 25;
+    const offset_x = 45;
+    const offset_y = 25;
+
+    var offset_tps = 0.25;
+
+    var toggle_names = true;
+    var toggle_pov = false;
+    var toggle_orthographic = false;
+
+    function init() {
+      scene = new THREE.Scene();
+      persp_camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.001, 1000);
+      persp_camera.position.set(-3, 2.5, 0);
+      ortho_camera = new THREE.OrthographicCamera(-10, 10, 5, -5, 0.1, 1000);
+      ortho_camera.position.set(-3, 5, 0);
+      ortho_camera.zoom = 1.8;
+      ortho_camera.updateProjectionMatrix();
+
+      camera = persp_camera;
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('container').appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.minDistance = 1.5;
+      controls.maxDistance = 3.8;
+      controls.minZoom = 1.5;
+      controls.maxZoom = 3.8;
+      //fp_controls = new THREE.FirstPersonControls(camera, renderer.domElement);
+      fp_controls = new LoultControls(camera, renderer.domElement);
+      fp_controls.lookSpeed = 0.015;
+      fp_controls.movementSpeed = 0.15;
+      fp_controls.enabled = false;
+      
+      //Lights
+      renderer.physicallyCorrectLights = true;
+      renderer.domElement.classList.add('blur-effect');
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xff0000, 1);
+      directionalLight.position.set(0, -1, -1);
+      scene.add(directionalLight);
+
+      const light = new THREE.PointLight(0xFFFFFF, 0.3);
+      light.power = 740;
+      light.penumbra = 0.1;
+      light.decay = 2.5;
+      light.distance = Infinity;
+      light.position.set(1, 4, 0);
+      scene.add(light);
+
+      window.addEventListener('resize', onWindowResize, false);
+
+      //Create a canvas and draw text
+      loult_canvas = document.createElement('canvas');
+      loult_context = loult_canvas.getContext('2d');
+      loult_canvas.width = 1024;
+      loult_canvas.height = 512;
+
+      loult_context.font = '32px Arial';
+      loult_context.fillStyle = 'white';
+      loult_context.textAlign = 'left';
+      loult_context.fillText("", offset_x, offset_y);
+
+      //Create a texture and mesh
+      texture = new THREE.Texture(loult_canvas);
+      texture.needsUpdate = true;
+      const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true });
+      const geometry = new THREE.PlaneGeometry(loult_canvas.width / 200, loult_canvas.height / 200);
+      const textMesh = new THREE.Mesh(geometry, material);
+
+      textMesh.position.set(7.5/2 - 0.1, 2.1, 0);
+      textMesh.rotation.y = -Math.PI / 2; // Rotate the text to face the camera
+      scene.add(textMesh);
+    }
+
+    function unescapeHtml(htmlStr) {
+        var doc = new DOMParser().parseFromString(htmlStr, "text/html");
+        return doc.documentElement.textContent;
+    }
+
+    client.onerror = function() {
+        console.log("Unable to connect to " + url);
+        console.log("Error: ", event);
+    };
+
+    client.onopen = function() {
+        console.log("Connected to " + url);
+    };
+
+    client.onmessage = function(event) {
+        try {
+            var packet = JSON.parse(event.data);
+            console.log("Packet: ", packet);
+            if (packet.type === "msg") {
+                var msg = packet.msg;
+                var user = pokemons[packet.userid].name;
+                var color = pokemons[packet.userid].color;
+                var new_msg = user + ": " + unescapeHtml(msg);
+                conversation.push([new_msg, color]);
+                if (text_y > loult_canvas.height-20) {
+                    index_sentence += 1;
+                    showConversation(conversation, index_sentence);
+                } else {
+                    addLine(new_msg, color);
+                }
+                pokemons[packet.userid].current_sentence = msg;
+                pokemons[packet.userid].action = "talking";
+            } else if (packet.type === "userlist") {
+                packet.users.forEach(function(user) {
+                    if (user.params.you) {
+                       me_userid = user.userid;
+                    }
+                    var poke_name = user.params.name;
+                    var poke_adj = user.params.adjective;
+                    var poke_color = user.params.color;
+                    InstantiatePoke(poke_name, poke_adj, poke_color, user.userid);
+                });
+            } else if (packet.type === "connect") {
+                var poke_name = packet.params.name;
+                var poke_adj = packet.params.adjective;
+                var poke_color = packet.params.color;
+                console.log(poke_name + " " + poke_adj);
+                InstantiatePoke(poke_name, poke_adj, poke_color, packet.userid);
+                conversation.push([poke_name + " " + poke_adj + " rejoint l'arène", "white"]);
+                if (text_y > loult_canvas.height - 20) {
+                    index_sentence += 1;
+                    showConversation(conversation, index_sentence);
+                } else {
+                    addLine(poke_name + " " + poke_adj + " rejoint l'arène", "white");
+                }
+            } else if (packet.type === "backlog") {
+                packet.msgs.forEach(function(msg) {
+                    var user = msg.user.name + " " + msg.user.adjective;
+                    var new_msg = user + ": " + unescapeHtml(msg.msg);
+                    conversation.push([new_msg, msg.user.color]);
+                });
+                showConversation(conversation, 0); 
+            }
+        } catch (error) {
+            console.error("Error parsing message", error);
+        }
+    };
+
+    client.onclose = function(event) {
+        console.log("Disconnected from " + url);
+    };
+
+    function addLine(line, color) {
+        loult_context.fillStyle = color;
+        loult_context.fillText(line, offset_x, offset_y+text_y);
+        text_y += line_height;
+        texture.needsUpdate = true;
+    }
+
+    function showConversation(conversation, index) {
+        var i = index;
+        loult_context.clearRect(0, 0, loult_canvas.width, loult_canvas.height);
+        text_y = 0;
+        var line = "";
+        var color = "";
+        while (i < conversation.length) {
+            line = conversation[i][0];
+            color = conversation[i][1];
+            while (line.length > 60) {
+              var split = line.substring(0, 60);
+              line = line.substring(60);
+              addLine(conversation[i][0], conversation[i][1]);
+            }
+            i++;
+            if (text_y > loult_canvas.height) {
+                break;
+            }
+        }
+        document.getElementById('sentenceScrollbar').max = conversation.length;
+    }
+
+    function sendMessage() {
+        var message = document.getElementById('textInput').value;
+        var data = {lang: "fr", msg: message, type: "msg"};
+        client.send(JSON.stringify(data));
+        document.getElementById('textInput').value = "";
+    }
+
+    function showMessage(text, duration) {
+      const messageElement = document.getElementById('message');
+      messageElement.textContent = text;
+      messageElement.style.display = 'block';
+      setTimeout(() => {
+        messageElement.style.display = 'none';
+      }, duration);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    const speed = 0.01;
+    const swinging_period = 60;
+    const prob_idle = 0.5;
+
+    // Function to update pokemons positions
+    function updatePokePositions() {
+      if (me_userid === "" || pokemons[me_userid] === undefined) return;
+
+      Object.values(pokemons).forEach(poke => {
+        if (poke.action === "talking") {
+          console.log(poke.current_sentence);
+          //create up and down oscillation of the scale with TWEEN with one cycle per letter of the sentence
+          var height = poke.height;
+          var scale = {x: height, y: height, z: height};
+          //set random scale between 1.2 and 1.6
+          var amplitude = Math.random() * (1.6 - 1.2) + 1.2;
+          var target = {x: height, y: height * amplitude, z: height};
+          var len_sentence = poke.current_sentence.length;
+          var tween = new TWEEN.Tween(scale).to(target, 100).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function() {
+            poke.object.scale.set(scale.x, scale.y, scale.z);
+          }).repeat(len_sentence).yoyo(true).onComplete(function() {
+            poke.action = "idle";
+            poke.object.scale.set(height, height, height);
+          }).start();
+          //reset the sentence
+          poke.action = "idle";
+          poke.current_sentence = "";
+        }
+
+        //if it is the user's pokemon and fp_controls are enabled, put the pokemon at the camera position
+        if (poke.object === pokemons[me_userid].object && fp_controls.enabled) {
+          if (poke.nametag.visible) {
+            poke.nametag.visible = false;
+          }
+          //use theta cosine and sine to get the direction of the camera
+          poke.object.position.set(camera.position.x + Math.cos(fp_controls.theta) * offset_tps, camera.position.y - 0.5, camera.position.z + Math.sin(fp_controls.theta) * offset_tps);
+          poke.object.rotation.y = -fp_controls.theta + Math.PI/2;
+          return;
+        }
+
+        // Calculate direction towards the target position
+        const direction = new THREE.Vector3().subVectors(poke.target, poke.object.position).normalize();
+        const velocity = direction.multiplyScalar(speed);
+
+        // Apply swinging rotation
+        poke.object.rotation.z = Math.sin(Math.PI * poke.count / swinging_period) * 0.06;
+        poke.count += 1;
+        
+        if (poke.action === "walking") {
+          poke.object.position.add(velocity);
+          poke.nametag.position.add(velocity);
+        }
+
+        // Check if the pokemon is close to the target position to update the target
+        if (poke.object.position.distanceTo(poke.target) < 0.1) {
+          poke.target = new THREE.Vector3(Math.random() * 6 - 3, poke.object.position.y, Math.random() * 6 - 3);
+          //rotate to look at target
+          poke.object.rotation.y = Math.atan2(poke.target.x - poke.object.position.x, poke.target.z - poke.object.position.z);
+        }
+
+        // Update target position at random intervals
+        poke.timer -= 0.01;
+        if (poke.timer < 0) {
+          if (prob_idle > Math.random()) {
+            poke.action = "idle";
+          } else {
+            poke.action = "walking";
+            poke.target = new THREE.Vector3(Math.random() * 6 - 3, poke.object.position.y, Math.random() * 6 - 3);
+            poke.object.rotation.y = Math.atan2(poke.target.x - poke.object.position.x, poke.target.z - poke.object.position.z);
+          }
+          poke.timer = Math.random() * 11.5 + 0.5;
+        }
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      updatePokePositions();
+      if (controls.enabled) {
+        controls.update();
+      } else if (fp_controls.enabled) {
+        fp_controls.update(0.1);
+      }
+      renderer.render(scene, camera);
+      TWEEN.update();
+    }
+
+    function loadScene(path) {
+      const loader = new THREE.GLTFLoader();
+      loader.load(path, (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+
+        controls.target.set(0, 0, 0);
+        camera.position.x = -3;
+        camera.position.y = 2.5;
+        camera.position.z = 0;
+        renderer.domElement.classList.replace('blur-effect', 'no-blur-effect');
+      },
+      (xhr) => {
+        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+      }, (error) => {
+        console.error('An error occurred while loading the model:', error);
+      });
+    }
+
+    function InstantiatePoke(poke,adj,color,userid) {
+      const default_poke = "metamorph";
+      var new_poke = default_poke;
+      //check if the file exists
+      fetch("assets/" + poke + ".glb", { method: 'HEAD' })
+        .then(response => {
+          if (response.ok) {
+            console.log(poke + " found, loading " + poke + ".glb.");
+            //lowercase the name
+            new_poke = poke.toLowerCase();
+          } else {
+            console.log(poke + " not found, loading default instead.");
+          }
+          //load the model
+          const loader = new THREE.GLTFLoader();
+          loader.load("assets/" + new_poke + ".glb", (gltf) => {
+            const model = gltf.scene;
+            scene.add(model);
+
+            fetch('pokemon_data.json')
+              .then(response => response.json())
+              .then(data => {
+                var position = new THREE.Vector3(Math.random() * 7 - 3.5, 0, Math.random() * 7 - 3.5);
+                if (data[new_poke].flying) {
+                  position.y = 1;
+                }
+                model.position.set(position.x, position.y, position.z);
+            
+                var height = 1;
+                //set size of the model from the data which is a string "height" i.e "1.0m"
+                try {
+                  height = parseFloat(data[new_poke].height.split("m")[0]);
+                } catch (error) {
+                  console.error(new_poke + " not found in pokemon_data.json");
+                }
+                model.scale.set(height, height, height);
+
+                var target = new THREE.Vector3(Math.random() * 7 - 3.5, position.y, Math.random() * 7 - 3.5);
+                var timer = Math.random() * 11.5 + 0.5;
+                //rotate to look at target
+                model.rotation.y = Math.atan2(target.x - model.position.x, target.z - model.position.z);
+
+                //TextMesh with name
+                // const fontJson = 
+                // const font = new THREE.Font( fontJson );
+
+                // const nametag = new TextGeometry(poke + " " + adj, {
+                //   font: font,
+                //   size: 80,
+                //   depth: 5,
+                //   curveSegments: 12,
+                //   bevelEnabled: true,
+                //   bevelThickness: 10,
+                //   bevelSize: 8,
+                //   bevelOffset: 0,
+                //   bevelSegments: 5
+                // } );
+
+                // scene.add(nametag);
+                // nametag.position.set(position.x, position.y + 0.5, position.z);
+                
+                //for now create a rectangle above the pokemon
+                const nametag = new THREE.Mesh(
+                  new THREE.BoxGeometry(0.01, 0.15, 0.5),
+                  new THREE.MeshBasicMaterial({ color: color })
+                );
+                //get height of the model and set the nametag above it
+                //var box = new THREE.Box3().setFromObject(model);
+                //console.log(new_poke, box.min, box.max)
+                nametag.position.set(position.x, position.y + height + 0.2, position.z);
+                scene.add(nametag);
+                if (!toggle_names) {
+                  nametag.visible = false;
+                }
+
+                models.push({name: poke, object: model});
+                //add pokemon to the dictionary with userid as key
+                pokemons[userid] = {name: poke+" "+adj, object: model, color: color, nametag: nametag, target: target, timer: timer, count: 0, action: "idle", current_sentence: "", height: height};
+
+                updateUserList();
+            });
+          },
+          (xhr) => {
+            console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+          }, (error) => {
+            console.error('An error occurred while loading the model:', error);
+          });
+        })
+        .catch(error => {
+          console.error("Error checking file:", error);
+          new_poke = default_poke;
+        });
+    }
+
+    function updateUserList() {
+      const userList = document.getElementById('userList');
+      userList.innerHTML = '';
+      Object.values(pokemons).forEach((poke, index) => {
+        const div = document.createElement('div');
+        div.textContent = poke.name;
+        userList.appendChild(div);
+      });
+    }
+
+    function showModel(index) {
+      Object.values(pokemons).forEach(poke => poke.object.visible = false);
+      pokemons[index].object.visible = true;
+      currentModel = pokemons[index].object;
+    }
+
+    window.onload = () => {
+      init();
+      loadScene('assets/loult.glb');
+      animate();
+    };
+
+    document.getElementById('fullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
+    
+    document.getElementById('sentenceScrollbar').addEventListener('input', function() {
+        index_sentence = parseInt(this.value);
+        showConversation(conversation, index_sentence);
+    });
+
+    //add listerner for text input
+    document.getElementById('textInput').addEventListener('blur', function(event) {
+      if (fp_controls.enabled) {
+        setTimeout(function () { document.getElementById('textInput').focus(); }, 20);
+      }
+    });
+
+    document.addEventListener('wheel', function(event) {
+      // Assuming offset_tps is a global variable that needs to be modified
+      // event.deltaY provides the amount of scroll. Positive for down, negative for up.
+      const scrollAmount = event.deltaY < 0 ? 0.1 : -0.1; // Adjust the increment/decrement value as needed
+
+      // Modify offset_tps based on the scroll direction, clamping between 0 and 3
+      offset_tps = Math.min(Math.max(offset_tps + scrollAmount, 0), 0.45);
+
+      // Prevent the page from scrolling
+      event.preventDefault();
+    }, { passive: false });
+
+    function togglePOV() {
+      //make the camera lerp to the user pokemon's position
+      if (controls.enabled) {
+        var pos = pokemons[me_userid].object.position;
+        var target = new THREE.Vector3(pos.x, pos.y + 0.5, pos.z);
+        var tween = new TWEEN.Tween(camera.position).to(target, 1000).start();
+      } else {
+        var target = new THREE.Vector3(-3, 2.5, 0);
+        var tween = new TWEEN.Tween(camera.position).to(target, 1000).start();
+      }
+      controls.enabled = !controls.enabled;
+      fp_controls.enabled = !fp_controls.enabled;
+    }
+
+    function toggleNames() {
+      toggle_names = !toggle_names;
+      Object.values(pokemons).forEach(poke => poke.nametag.visible = !poke.nametag.visible);
+    }
+
+    function toggleUserList() {
+      const userList = document.getElementById('userList');
+      userList.style.display = userList.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleOrthographic() {
+      toggle_orthographic = !toggle_orthographic;
+      if (toggle_orthographic) {
+        camera = ortho_camera;
+      } else {
+        camera = persp_camera;
+      }
+      controls.object = camera;
+      controls.update();
+    }
+  </script>
+</body>
+</html>
