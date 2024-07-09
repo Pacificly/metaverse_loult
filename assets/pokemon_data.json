@@ -1,0 +1,18 @@
+{
+    "aquali": {"height": "1m"},
+    "bulbizarre": {"height": "0.7m"},
+    "carapuce": {"height": "0.5m"},
+    "evoli": {"height": "0.3m"},
+    "gardevoir": {"height": "1.6m"},
+    "joliflor": {"height": "0.4m"},
+    "lokhlass": {"height": "2.5m"},
+    "mackogneur": {"height": "1.6m"},
+    "metamorph": {"height": "0.3m"},
+    "pichu": {"height": "0.3m"},
+    "reptincel": {"height": "1.1m"},
+    "ronflex": {"height": "2.1m"},
+    "spectrum": {"height": "1.6m", "flying": "yes"},
+    "sulfura": {"height": "2.0m"},
+    "typhlosion": {"height": "1.7m"},
+    "smogo": {"height": "0.6m", "flying": "yes"}
+}
