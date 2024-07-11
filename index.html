@@ -328,12 +328,11 @@
   </script>
 
   <script>
+    var volume = 0.5;
     // JavaScript
     document.addEventListener('DOMContentLoaded', function() {
       const musicFiles = [
-        'assets/music_far_fetched.mp3',
-        'assets/music_between_worlds.mp3',
-        'assets/music_spring_petals.mp3'
+        'assets/music_lake.mp3',
       ];
 
       const audioElement = document.getElementById('background-music');
@@ -341,6 +340,7 @@
       function playRandomMusic() {
         const randomIndex = Math.floor(Math.random() * musicFiles.length);
         audioElement.src = musicFiles[randomIndex];
+        audioElement.volume = volume;
         audioElement.play();
       }
 
@@ -548,7 +548,18 @@
               }
             }
         } catch (error) {
-            console.error("Error parsing message", error);
+            //console.error("Error parsing message", error);
+            
+            // Create a Blob from the event data, assuming it's audio bytes
+            var blob = new Blob([event.data], {type: 'audio/wav'}); // Adjust the MIME type if necessary
+
+            // Create an audio element
+            var audio = new Audio();
+            audio.src = URL.createObjectURL(blob);
+            audio.onloadedmetadata = function() {
+                // Play the audio after it's loaded
+                audio.play().catch(e => console.error("Error playing audio", e));
+            };
         }
     };
 
@@ -717,14 +728,13 @@
     function InstantiatePoke(poke,adj,color,userid) {
       const default_poke = "metamorph";
       var new_poke = default_poke;
-      poke = poke.toLowerCase();
       //check if the file exists
-      fetch("assets/" + poke + ".glb", { method: 'HEAD' })
+      fetch("assets/" + poke.toLowerCase() + ".glb", { method: 'HEAD' })
         .then(response => {
           if (response.ok) {
-            console.log(poke + " found, loading " + poke + ".glb.");
+            console.log(poke + " found, loading " + poke.toLowerCase() + ".glb.");
             //lowercase the name
-            new_poke = poke;
+            new_poke = poke.toLowerCase();
           } else {
             console.log(poke + " not found, loading default instead.");
           }
@@ -868,11 +878,17 @@
 
     function togglePositionSharing() {
       if (fp_controls.enabled) {
+        // Send the position every 500ms to every pokemon in_metaverse
         messageInterval = setInterval(() => {
-            var position_msg = "::"+pokemon.object.position.x+","+pokemon.object.position.y+","+pokemon.object.position.z;
-            var data = {lang: "fr", msg: position_msg, type: "private_msg"};
-            client.send(JSON.stringify(data));
-        }, 500); // Adjust the interval as needed
+          const position = pokemons[me_userid].object.position;
+          const message = `::${position.x},${position.y},${position.z}`;
+          Object.values(pokemons).forEach(poke => {
+            if (poke.in_metaverse && poke.object !== pokemons[me_userid].object) {
+              const data = { lang: 'fr', msg: message, type: 'msg'};
+              client.send(JSON.stringify(data));
+            }
+          });
+        }, 1000);
       } else {
         clearInterval(messageInterval);
       }
