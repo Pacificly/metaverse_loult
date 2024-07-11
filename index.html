@@ -696,6 +696,8 @@
     let messageInterval;
 
     function togglePositionSharing() {
+      return;
+
       if (fp_controls.enabled) {
         // Send the position every 500ms to every pokemon in_metaverse
         messageInterval = setInterval(() => {
