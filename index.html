@@ -194,6 +194,7 @@
 
     function init() {
       scene = new THREE.Scene();
+      console.log(scene)
       persp_camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.001, 1000);
       persp_camera.position.set(-3, 2.5, 0);
       ortho_camera = new THREE.OrthographicCamera(-10, 10, 5, -5, 0.1, 1000);
