@@ -717,13 +717,14 @@
     function InstantiatePoke(poke,adj,color,userid) {
       const default_poke = "metamorph";
       var new_poke = default_poke;
+      poke = poke.toLowerCase();
       //check if the file exists
       fetch("assets/" + poke + ".glb", { method: 'HEAD' })
         .then(response => {
           if (response.ok) {
             console.log(poke + " found, loading " + poke + ".glb.");
             //lowercase the name
-            new_poke = poke.toLowerCase();
+            new_poke = poke;
           } else {
             console.log(poke + " not found, loading default instead.");
           }
