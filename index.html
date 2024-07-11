@@ -159,6 +159,7 @@
   </script>
 
   <script>
+
     let scene, camera, renderer, controls;
 
     //pokemons format {name: string, object: THREE.Object3D, color: string, audio: THREE.AudioLoader, nametag: THREE.Object3D, target: THREE.Vector3, timer: number, count: number, action: string, current_sentence: string, height: number, in_metaverse: boolean}
@@ -194,7 +195,6 @@
 
     function init() {
       scene = new THREE.Scene();
-      console.log(scene)
       persp_camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.001, 1000);
       persp_camera.position.set(-3, 2.5, 0);
       ortho_camera = new THREE.OrthographicCamera(-10, 10, 5, -5, 0.1, 1000);
@@ -701,9 +701,9 @@
         messageInterval = setInterval(() => {
           const position = pokemons[me_userid].object.position;
           const message = `::${position.x},${position.y},${position.z}`;
-          Object.values(pokemons).forEach(poke => {
-            if (poke.in_metaverse && poke.object !== pokemons[me_userid].object) {
-              const data = { "lang": 'fr', "type": "private_msg", "msg": message, "userid": poke.userid };
+          Object.keys(pokemons).forEach(userid => {
+            if (pokemons[userid].in_metaverse && userid !== me_userid) {
+              const data = { "lang": 'fr', "type": "private_msg", "msg": message, "userid": userid };
               client.send(JSON.stringify(data));
             }
           });
