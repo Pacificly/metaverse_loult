@@ -866,13 +866,13 @@
 
     let messageInterval;
 
-    function enableFpControls() {
+    function togglePositionSharing() {
       if (fp_controls.enabled) {
         messageInterval = setInterval(() => {
             var position_msg = "::"+pokemon.object.position.x+","+pokemon.object.position.y+","+pokemon.object.position.z;
             var data = {lang: "fr", msg: position_msg, type: "private_msg"};
             client.send(JSON.stringify(data));
-        }, 1000); // Adjust the interval as needed
+        }, 500); // Adjust the interval as needed
       } else {
         clearInterval(messageInterval);
       }
@@ -893,7 +893,7 @@
       }
       controls.enabled = !controls.enabled;
       fp_controls.enabled = !fp_controls.enabled;
-      enablePositionSharing();
+      togglePositionSharing();
     }
 
     function toggleNames() {
