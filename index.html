@@ -364,14 +364,15 @@
               }
             }
         } catch (error) {
-            var volume_voice = 1.0;
+            if (last_userid == undefined) {
+                return;
+            }
             //console.error("Error parsing message", error);
 
+            var volume_voice = 1.0;
             var sound = pokemons[last_userid].audio;
-            
             // Create a Blob from the event data, assuming it's audio bytes
             var blob = new Blob([event.data], {type: 'audio/wav'});
-
             // Create a URL from the Blob
             var url = URL.createObjectURL(blob);
 
@@ -684,13 +685,9 @@
     });
 
     document.addEventListener('wheel', function(event) {
-      // Assuming offset_tps is a global variable that needs to be modified
-      // event.deltaY provides the amount of scroll. Positive for down, negative for up.
-      const scrollAmount = event.deltaY < 0 ? 0.1 : -0.1; // Adjust the increment/decrement value as needed
-
+      const scrollAmount = event.deltaY < 0 ? 0.1 : -0.1;
       // Modify offset_tps based on the scroll direction, clamping between 0 and 3
       offset_tps = Math.min(Math.max(offset_tps + scrollAmount, 0), 0.45);
-
       // Prevent the page from scrolling
       event.preventDefault();
     }, { passive: false });
@@ -705,7 +702,7 @@
           const message = `::${position.x},${position.y},${position.z}`;
           Object.values(pokemons).forEach(poke => {
             if (poke.in_metaverse && poke.object !== pokemons[me_userid].object) {
-              const data = { lang: 'fr', msg: message, type: 'msg'};
+              const data = { "lang": 'fr', "type": "private_msg", "msg": message, "userid": poke.userid };
               client.send(JSON.stringify(data));
             }
           });
@@ -758,9 +755,7 @@
     }
 
     function toggleOrthographic() {
-      if (toggle_pov) {
-        return;
-      }
+      if (toggle_pov) { return; }
 
       toggle_orthographic = !toggle_orthographic;
       if (toggle_orthographic) {
