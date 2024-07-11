@@ -40,8 +40,8 @@
       cursor: pointer;
     }
     .toggle-btn {
-      width: 120px; /* Example width */
-      height: 35px; /* Example height */
+      width: 80px;
+      height: 35px;
       padding: 10px;
       background-color: #4CAF50;
       color: white;
@@ -49,20 +49,25 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    #toggle-pov-btn {
+    #toggle-music-btn {
       position: absolute;
       top: 10px;
       right: 100px;
     }
+    #toggle-pov-btn {
+      position: absolute;
+      top: 10px;
+      right: 190px;
+    }
     #toggle-names-btn {
       position: absolute;
       top: 10px;
-      right: 230px;
+      right: 280px;
     }
     #toggle-orthographic-btn {
       position: absolute;
       top: 10px;
-      right: 360px;
+      right: 370px;
     }
     #userList {
       position: absolute;
@@ -107,9 +112,10 @@
   <input type="file" id="fileInput" style="display:none" accept=".gltf,.glb" multiple>
   <button id="toggle_userlist" onclick="toggleUserList()">Userlist</button>
   <button id="fullscreen">Fullscreen</button>
-  <button id="toggle-pov-btn" class="toggle-btn" aria-label="Toggle Point of View" onclick="togglePOV()">Toggle POV</button>
-  <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle Names" onclick="toggleNames()">Toggle Names</button>
-  <button id="toggle-orthographic-btn" class="toggle-btn" aria-label="Toggle Orthographic" onclick="toggleOrthographic()">Change View</button>
+  <button id="toggle-music-btn" class="toggle-btn" aria-label="Toggle Music" onclick="toggleMusic()">Music</button>
+  <button id="toggle-pov-btn" class="toggle-btn" aria-label="Toggle Point of View" onclick="togglePOV()">POV</button>
+  <button id="toggle-names-btn" class="toggle-btn" aria-label="Toggle Names" onclick="toggleNames()">Names</button>
+  <button id="toggle-orthographic-btn" class="toggle-btn" aria-label="Toggle Orthographic" onclick="toggleOrthographic()">View</button>
 
   <div id="userList"></div>
   <div id="message" style="display: none;"></div>
@@ -126,209 +132,10 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/FirstPersonControls.js"></script>
 
-  <script>
-    LoultControls = function ( object, domElement ) {
-
-    this.object = object;
-    this.target = new THREE.Vector3();
-
-    this.domElement = ( domElement !== undefined ) ? domElement : document;
-
-    this.enabled = true;
-
-    this.velocity = 0;
-    this.damping = 0.4;
-    this.height = 0.5;
-
-    this.movementSpeed = 1.0;
-    this.lookSpeed = 0.005;
-
-    this.lookVertical = true;
-    this.autoForward = false;
-
-    this.activeLook = true;
-
-    this.heightSpeed = false;
-    this.heightCoef = 1.0;
-    this.heightMin = 0.0;
-    this.heightMax = 1.0;
-
-    this.constrainVertical = false;
-    this.verticalMin = 0;
-    this.verticalMax = Math.PI;
-
-    this.autoSpeedFactor = 0.0;
-
-    this.mouseX = 0;
-    this.mouseY = 0;
-
-    this.lat = 0;
-    this.lon = 0;
-    this.phi = 0;
-    this.theta = 0;
-
-    this.moveForward = false;
-    this.moveBackward = false;
-    this.moveLeft = false;
-    this.moveRight = false;
-
-    this.mouseDragOn = false;
-    this.upReleased = false;
-
-    // Dash effect properties
-    this.isDashing = false;
-    this.dashDuration = 300; // Dash duration in milliseconds
-
-    this.viewHalfX = 0;
-    this.viewHalfY = 0;
-
-    if ( this.domElement !== document ) {
-      this.domElement.setAttribute( 'tabindex', - 1 );
-    }
-
-    this.handleResize = function () {
-
-      if ( this.domElement === document ) {
-
-        this.viewHalfX = window.innerWidth / 2;
-        this.viewHalfY = window.innerHeight / 2;
-
-      } else {
-
-        this.viewHalfX = this.domElement.offsetWidth / 2;
-        this.viewHalfY = this.domElement.offsetHeight / 2;
-
-      }
-
-    };
-
-    this.onMouseDown = function ( event ) {
-      if (this.upReleased) {
-        this.isDashing = true;
-        setTimeout(() => {
-          this.isDashing = false;
-        }, this.dashDuration);
-      }
-
-      if ( this.activeLook ) {
-        switch ( event.button ) {
-          case 0: this.moveForward = true; break;
-          case 2: this.moveBackward = true; break;
-        }
-      }
-
-      this.mouseDragOn = true;
-
-      event.stopPropagation();
-    };
-
-    this.onMouseUp = function ( event ) {
-      if ( this.activeLook ) {
-        switch ( event.button ) {
-          case 0: this.moveForward = false; break;
-          case 2: this.moveBackward = false; break;
-        }
-      }
-
-      this.mouseDragOn = false;
-      this.upReleased = true;
-
-      setTimeout(() => {
-        this.upReleased = false;
-      }, 100);
-    };
-
-    this.onMouseMove = function ( event ) {
-      if ( this.domElement === document ) {
-        this.mouseX = event.pageX - this.viewHalfX;
-        this.mouseY = event.pageY - this.viewHalfY;
-      } else {
-        this.mouseX = event.pageX - this.domElement.offsetLeft - this.viewHalfX;
-        this.mouseY = event.pageY - this.domElement.offsetTop - this.viewHalfY;
-      }
-    };
-
-    this.update = function( delta ) {
-      if ( this.enabled === false ) return;
-
-      var dashFactor = this.isDashing ? 8 : 1;
-      var actualMoveSpeed = delta * this.movementSpeed * dashFactor;
-
-      if ( this.moveForward) this.object.translateZ( - actualMoveSpeed);
-      if ( this.moveBackward) this.object.translateZ( actualMoveSpeed);
-
-      //add gravity
-      if (this.object.position.y <= this.height) {
-        this.velocity = 0;
-        this.object.position.y = this.height;
-      } else {
-        this.velocity -= 9.8 * 0.002 * delta;
-        this.object.position.y += this.velocity * delta;
-      }
-      
-
-      var actualLookSpeed = delta * this.lookSpeed;
-      if ( ! this.activeLook ) {
-        actualLookSpeed = 0;
-      }
-      var verticalLookRatio = 1;
-      if ( this.constrainVertical ) {
-        verticalLookRatio = Math.PI / ( this.verticalMax - this.verticalMin );
-      }
-
-      this.lon += this.mouseX * actualLookSpeed;
-      if ( this.lookVertical ) this.lat -= this.mouseY * actualLookSpeed * verticalLookRatio;
-
-      this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
-      this.phi = THREE.Math.degToRad( 90 - this.lat );
-
-      this.theta = THREE.Math.degToRad( this.lon );
-
-      if ( this.constrainVertical ) {
-        this.phi = THREE.Math.mapLinear( this.phi, 0, Math.PI, this.verticalMin, this.verticalMax );
-      }
-
-      var targetPosition = this.target,
-        position = this.object.position;
-
-      targetPosition.x = position.x + 100 * Math.sin( this.phi ) * Math.cos( this.theta );
-      targetPosition.y = position.y + 100 * Math.cos( this.phi );
-      targetPosition.z = position.z + 100 * Math.sin( this.phi ) * Math.sin( this.theta );
-
-      this.object.lookAt( targetPosition );
-    };
-
-    function contextmenu( event ) {
-      event.preventDefault();
-    }
-
-    this.dispose = function() {
-      this.domElement.removeEventListener( 'contextmenu', contextmenu, false );
-      this.domElement.removeEventListener( 'mousedown', _onMouseDown, false );
-      this.domElement.removeEventListener( 'mousemove', _onMouseMove, false );
-      this.domElement.removeEventListener( 'mouseup', _onMouseUp, false );
-    };
-
-    var _onMouseMove = bind( this, this.onMouseMove );
-    var _onMouseDown = bind( this, this.onMouseDown );
-    var _onMouseUp = bind( this, this.onMouseUp );
-
-    this.domElement.addEventListener( 'contextmenu', contextmenu, false );
-    this.domElement.addEventListener( 'mousemove', _onMouseMove, false );
-    this.domElement.addEventListener( 'mousedown', _onMouseDown, false );
-    this.domElement.addEventListener( 'mouseup', _onMouseUp, false );
-
-    function bind( scope, fn ) {
-      return function () {
-        fn.apply( scope, arguments );
-      };
-    }
-    this.handleResize();
-    };
-  </script>
+  <script src="/scripts/LoultControls.js"></script>
 
   <script>
-    var volume = 0.5;
+    var volume = 0.2;
     // JavaScript
     document.addEventListener('DOMContentLoaded', function() {
       const musicFiles = [
@@ -354,9 +161,10 @@
   <script>
     let scene, camera, renderer, controls;
 
-    //pokemons format {name: string, object: THREE.Object3D, color: string, nametag: THREE.Object3D, target: THREE.Vector3, timer: number, count: number, action: string, current_sentence: string, height: number, in_metaverse: boolean}
+    //pokemons format {name: string, object: THREE.Object3D, color: string, audio: THREE.AudioLoader, nametag: THREE.Object3D, target: THREE.Vector3, timer: number, count: number, action: string, current_sentence: string, height: number, in_metaverse: boolean}
     let pokemons = {};
     let me_userid = "";
+    var last_userid;
     let currentModel;
 
     let server = "loult.family";
@@ -366,6 +174,8 @@
     // Construct the WebSocket URL dynamically
     var url = `wss://${server}:${port}/socket/${channel}`;
     var client = new WebSocket(url);
+
+    var listener, audioLoader;
 
     var loult_canvas,loult_context;
     var texture_text;
@@ -450,6 +260,11 @@
       textMesh.position.set(7.5/2 - 0.1, 2.1, 0);
       textMesh.rotation.y = -Math.PI / 2; // Rotate the text to face the camera
       scene.add(textMesh);
+
+      listener = new THREE.AudioListener();
+      persp_camera.add(listener);
+      ortho_camera.add(listener);
+      audioLoader = new THREE.AudioLoader();
     }
 
     function unescapeHtml(htmlStr) {
@@ -486,6 +301,7 @@
                 showConversation(conversation, index_sentence);
                 pokemons[packet.userid].current_sentence = msg;
                 pokemons[packet.userid].action = "talking";
+                last_userid = packet.userid;
             } else if (packet.type === "userlist") {
                 packet.users.forEach(function(user) {
                     if (user.params.you) {
@@ -548,18 +364,29 @@
               }
             }
         } catch (error) {
+            var volume_voice = 1.0;
             //console.error("Error parsing message", error);
+
+            var sound = pokemons[last_userid].audio;
             
             // Create a Blob from the event data, assuming it's audio bytes
-            var blob = new Blob([event.data], {type: 'audio/wav'}); // Adjust the MIME type if necessary
+            var blob = new Blob([event.data], {type: 'audio/wav'});
 
-            // Create an audio element
-            var audio = new Audio();
-            audio.src = URL.createObjectURL(blob);
-            audio.onloadedmetadata = function() {
-                // Play the audio after it's loaded
-                audio.play().catch(e => console.error("Error playing audio", e));
-            };
+            // Create a URL from the Blob
+            var url = URL.createObjectURL(blob);
+
+            if (sound.isPlaying) {
+                sound.stop();
+            }
+
+            // Use the URL with audioLoader.load if it supports URLs
+            audioLoader.load(url, function(buffer) {
+                sound.setBuffer(buffer);
+                sound.setRefDistance(20);
+                sound.play();
+                // Revoke the blob URL to free up resources
+                URL.revokeObjectURL(url);
+            });
         }
     };
 
@@ -648,6 +475,8 @@
           poke.current_sentence = "";
         }
 
+        poke.nametag.position.set(poke.object.position.x, poke.object.position.y + poke.height + 0.2, poke.object.position.z);
+
         //if it is the user's pokemon and fp_controls are enabled, put the pokemon at the camera position
         if (poke.object === pokemons[me_userid].object && fp_controls.enabled) {
           if (poke.nametag.visible) {
@@ -669,7 +498,6 @@
         
         if (poke.action === "walking") {
           poke.object.position.add(velocity);
-          poke.nametag.position.add(velocity);
         }
 
         // Check if the pokemon is close to the target position to update the target
@@ -766,18 +594,6 @@
                 var timer = Math.random() * 11.5 + 0.5;
                 //rotate to look at target
                 model.rotation.y = Math.atan2(target.x - model.position.x, target.z - model.position.z);
-
-                // const nametag = new THREE.TextGeometry(poke + " " + adj, {
-                //   font: font,
-                //   size: 80,
-                //   depth: 5,
-                //   curveSegments: 12,
-                //   bevelEnabled: true,
-                //   bevelThickness: 10,
-                //   bevelSize: 8,
-                //   bevelOffset: 0,
-                //   bevelSegments: 5
-                // } );
                 
                 //for now create a rectangle above the pokemon
                 const vertices = [1, 1, 1, -1, -1, 1, -1, 1, -1, 1, -1, -1]
@@ -792,9 +608,14 @@
                 if (!toggle_names) {
                   nametag.visible = false;
                 }
+
+                //add audio
+                const audio = new THREE.PositionalAudio( listener )
+                model.add(audio);
+
                 var is_me = (userid === me_userid);
                 //add pokemon to the dictionary with userid as key
-                pokemons[userid] = {name: poke+" "+adj, object: model, color: color, nametag: nametag, target: target, timer: timer, count: 0, action: "idle", current_sentence: "", height: height, in_metaverse: is_me};
+                pokemons[userid] = {name: poke+" "+adj, object: model, color: color, audio: audio, nametag: nametag, target: target, timer: timer, count: 0, action: "idle", current_sentence: "", height: height, in_metaverse: is_me};
 
                 updateUserList();
             });
@@ -913,13 +734,27 @@
     }
 
     function toggleNames() {
+      console.log("Toggling names", toggle_names);
       toggle_names = !toggle_names;
-      Object.values(pokemons).forEach(poke => poke.nametag.visible = !poke.nametag.visible);
+      if (toggle_names) {
+        Object.values(pokemons).forEach(poke => poke.nametag.visible = true);
+      } else {
+        Object.values(pokemons).forEach(poke => poke.nametag.visible = false);
+      }
     }
 
     function toggleUserList() {
       const userList = document.getElementById('userList');
       userList.style.display = userList.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleMusic() {
+      const music = document.getElementById('background-music');
+      if (music.paused) {
+        music.play();
+      } else {
+        music.pause();
+      }
     }
 
     function toggleOrthographic() {
